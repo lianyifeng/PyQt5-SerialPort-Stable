@@ -10,9 +10,10 @@ from PyQt5.QtSerialPort import QSerialPort, QSerialPortInfo
 from PyQt5.QtWidgets import QApplication, QMainWindow
 from PyQt5.QtWebEngineWidgets import *
 from Ui_SerialPort import Ui_Form
+from SerialPortTest import Ui_Form_Test
 from PyQt5.QtCore import QDate
 
-class MyMainWindow(QMainWindow, Ui_Form):
+class MyMainWindow(QMainWindow, Ui_Form_Test):
     def __init__(self, parent=None):
         super(MyMainWindow, self).__init__(parent)
         self.setupUi(self)
@@ -26,26 +27,25 @@ class MyMainWindow(QMainWindow, Ui_Form):
         # Qt 串口类
         self.com = QSerialPort()
         # Qt 定时器类
-        self.timer = QTimer(self) #初始化一个定时器
-        self.timer.timeout.connect(self.ShowTime) #计时结束调用operate()方法
-        self.timer.start(100) #设置计时间隔 100ms 并启动
+        # self.timer = QTimer(self) #初始化一个定时器
+        # self.timer.timeout.connect(self.ShowTime) #计时结束调用operate()方法
+        # self.timer.start(100) #设置计时间隔 100ms 并启动
     
     # 设置信号与槽
     def CreateSignalSlot(self):
         self.Com_Open_Button.clicked.connect(self.Com_Open_Button_clicked) 
         self.Com_Close_Button.clicked.connect(self.Com_Close_Button_clicked) 
-        self.Send_Button.clicked.connect(self.SendButton_clicked) 
-        self.Com_Refresh_Button.clicked.connect(self.Com_Refresh_Button_Clicked) 
+        # self.Send_Button.clicked.connect(self.SendButton_clicked)
+        self.Send_Button_1.clicked.connect(lambda: self.SendButton_clicked_number(1))
+        self.Send_Button_2.clicked.connect(lambda: self.SendButton_clicked_number(2))
+        self.Send_Button_3.clicked.connect(lambda: self.SendButton_clicked_number(3))
+        self.Send_Button_4.clicked.connect(lambda: self.SendButton_clicked_number(4))
+        self.Com_Refresh_Button.clicked.connect(self.Com_Refresh_Button_Clicked)
         self.com.readyRead.connect(self.Com_Receive_Data) # 接收数据
         self.hexSending_checkBox.stateChanged.connect(self.hexShowingClicked)
         self.hexSending_checkBox.stateChanged.connect(self.hexSendingClicked)
-        self.About_Button.clicked.connect(self.Goto_GitHub)
-        
-    # 跳转到 GitHub 查看源代码
-    def Goto_GitHub(self):
-        self.browser = QWebEngineView()
-        self.browser.load(QUrl('https://github.com/Oslomayor/PyQt5-SerialPort-Stable'))
-        self.setCentralWidget(self.browser)
+
+
     
     # 显示时间
     def ShowTime(self):
@@ -53,16 +53,21 @@ class MyMainWindow(QMainWindow, Ui_Form):
         
     # 串口发送数据
     def Com_Send_Data(self):
-        txData = self.textEdit_Send.toPlainText()
-        if len(txData) == 0 :
+        msg = self.textEdit_Send.toPlainText()
+
+        self.send_data(self, msg)
+
+    def send_data(self, msg):
+        if len(msg) == 0:
             return
         if self.hexSending_checkBox.isChecked() == False:
-            self.com.write(txData.encode('UTF-8'))
+            self.com.write(msg.encode('UTF-8'))
+            self.show_data(msg, '发送:')
         else:
-            Data = txData.replace(' ', '')
-            # 如果16进制不是偶数个字符, 去掉最后一个, [ ]左闭右开
-            if len(Data)%2 == 1:
-                Data = Data[0:len(Data)-1]
+            Data = msg.replace(' ', '')
+            # 如果16进制不是偶数个字符, 去掉最后一个, [ ]左闭右开q
+            if len(Data) % 2 == 1:
+                Data = Data[0:len(Data) - 1]
             # 如果遇到非16进制字符
             if Data.isalnum() is False:
                 QMessageBox.critical(self, '错误', '包含非十六进制数')
@@ -73,34 +78,62 @@ class MyMainWindow(QMainWindow, Ui_Form):
                 return
             # 发送16进制数据, 发送格式如 ‘31 32 33 41 42 43’, 代表'123ABC'
             try:
-                self.com.write(hexData) 
+                self.com.write(hexData)
             except:
                 QMessageBox.critical(self, '异常', '十六进制发送错误')
                 return
-                
-                
-    
+            self.show_data(hexData, '发送:')
+
+    def Com_Send_Data_number(self, number):
+        txData = ''
+        if number == 1:
+            txData = self.lineEdit_1.text()
+        elif number == 2:
+            txData = self.lineEdit_2.text()
+        elif number == 3:
+            txData = self.lineEdit_3.text()
+        elif number == 4:
+            txData = self.lineEdit_4.text()
+        if txData == '':
+            return
+        self.send_data(txData)
+
+
     # 串口接收数据
     def Com_Receive_Data(self):
-        
+        rxData = ""
         try:
             rxData = bytes(self.com.readAll())
         except:
             QMessageBox.critical(self, '严重错误', '串口接收数据错误')
-        if self.hexShowing_checkBox.isChecked() == False :
+        self.show_data(rxData,'接收:')
+
+    def show_data(self, rxData, prefix):
+        if self.hexShowing_checkBox.isChecked() == False:
             try:
-                self.textEdit_Recive.insertPlainText(rxData.decode('UTF-8'))
-            except:
+                self.textEdit_Recive.insertPlainText('\n')
+                if hasattr(rxData, 'decode'):
+                    self.textEdit_Recive.insertPlainText(prefix + rxData.decode('UTF-8'))
+                else:
+                    self.textEdit_Recive.insertPlainText(prefix + rxData)
+
+            except Exception as e:
+                print(f"捕获到异常：{e}")
                 pass
-        else :
-            Data = binascii.b2a_hex(rxData).decode('ascii')
-            # re 正则表达式 (.{2}) 匹配两个字母
-            hexStr = ' 0x'.join(re.findall('(.{2})', Data))
-            # 补齐第一个 0x
-            hexStr = '0x' + hexStr
-            self.textEdit_Recive.insertPlainText(hexStr)
-            self.textEdit_Recive.insertPlainText(' ')
-            
+        else:
+            try:
+                Data = binascii.b2a_hex(rxData).decode('ascii')
+                # re 正则表达式 (.{2}) 匹配两个字母
+                hexStr = ' '.join(re.findall('(.{2})', Data))
+                # 补齐第一个 0x
+                hexStr = ' ' + hexStr
+                self.textEdit_Recive.insertPlainText('\n')
+                self.textEdit_Recive.insertPlainText(prefix + hexStr)
+                self.textEdit_Recive.insertPlainText(' ')
+            except Exception as e:
+                print(f"捕获到异常：{e}")
+                pass
+
      
     # 串口刷新
     def Com_Refresh_Button_Clicked(self):
@@ -128,6 +161,8 @@ class MyMainWindow(QMainWindow, Ui_Form):
     def SendButton_clicked(self):
         self.Com_Send_Data()
 
+    def SendButton_clicked_number(self, number):
+        self.Com_Send_Data_number(number)
         
     # 串口刷新按钮按下
     def Com_Open_Button_clicked(self):

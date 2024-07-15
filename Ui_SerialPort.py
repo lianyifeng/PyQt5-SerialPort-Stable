@@ -135,16 +135,16 @@ class Ui_Form(object):
         self.Time_Label.setFont(font)
         self.Time_Label.setAlignment(QtCore.Qt.AlignCenter)
         self.Time_Label.setObjectName("Time_Label")
-        self.About_Button = QtWidgets.QPushButton(Form)
-        self.About_Button.setGeometry(QtCore.QRect(440, 40, 221, 31))
+        # self.About_Button = QtWidgets.QPushButton(Form)
+        # self.About_Button.setGeometry(QtCore.QRect(440, 40, 221, 31))
         font = QtGui.QFont()
         font.setFamily("方正兰亭中黑_GBK")
         font.setPointSize(9)
         font.setBold(False)
         font.setItalic(False)
         font.setWeight(50)
-        self.About_Button.setFont(font)
-        self.About_Button.setObjectName("About_Button")
+        # self.About_Button.setFont(font)
+        # self.About_Button.setObjectName("About_Button")
 
         self.retranslateUi(Form)
         self.ClearButton.clicked.connect(self.textEdit_Recive.clear)
@@ -190,7 +190,7 @@ class Ui_Form(object):
         self.hexSending_checkBox.setText(_translate("Form", "16进制发送"))
         self.hexShowing_checkBox.setText(_translate("Form", "16进制显示"))
         self.Time_Label.setText(_translate("Form", "Time"))
-        self.About_Button.setText(_translate("Form", "Made by PyQt5 - 查看源代码"))
+        # self.About_Button.setText(_translate("Form", "Made by PyQt5 - 查看源代码"))
 
 
 if __name__ == "__main__":
